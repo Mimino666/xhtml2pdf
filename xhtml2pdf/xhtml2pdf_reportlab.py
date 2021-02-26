@@ -120,10 +120,15 @@ class PmlBaseDoc(BaseDocTemplate):
     def afterFlowable(self, flowable):
         # Does the flowable contain fragments?
         if getattr(flowable, "outline", False):
+            style = flowable.style.name
+            key = '%s-%s' % (style, self.seq.nextf(style.lower()))
+
+            self.canv.bookmarkPage(key)
             self.notify('TOCEntry', (
                 flowable.outlineLevel,
                 html_escape(copy.deepcopy(flowable.text), 1),
-                self.page))
+                self.page,
+                key))
 
     def handle_nextPageTemplate(self, pt):
         '''
@@ -784,58 +789,7 @@ class PmlPageCount(IndexingFlowable):
 
 
 class PmlTableOfContents(TableOfContents):
-    def wrap(self, availWidth, availHeight):
-        """
-        All table properties should be known by now.
-        """
-
-        widths = (availWidth - self.rightColumnWidth,
-                  self.rightColumnWidth)
-
-        # makes an internal table which does all the work.
-        # we draw the LAST RUN's entries!  If there are
-        # none, we make some dummy data to keep the table
-        # from complaining
-        if len(self._lastEntries) == 0:
-            _tempEntries = [(0, 'Placeholder for table of contents', 0)]
-        else:
-            _tempEntries = self._lastEntries
-
-        lastMargin = 0
-        tableData = []
-        tableStyle = [
-            ('VALIGN', (0, 0), (- 1, - 1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (- 1, - 1), 0),
-            ('RIGHTPADDING', (0, 0), (- 1, - 1), 0),
-            ('TOPPADDING', (0, 0), (- 1, - 1), 0),
-            ('BOTTOMPADDING', (0, 0), (- 1, - 1), 0),
-        ]
-        for i, entry in enumerate(_tempEntries):
-            level, text, pageNum = entry[:3]
-            leftColStyle = self.levelStyles[level]
-            if i:  # Not for first element
-                tableStyle.append((
-                    'TOPPADDING',
-                    (0, i), (- 1, i),
-                    max(lastMargin, leftColStyle.spaceBefore)))
-                # print leftColStyle.leftIndent
-            lastMargin = leftColStyle.spaceAfter
-            #right col style is right aligned
-            rightColStyle = ParagraphStyle(name='leftColLevel%d' % level,
-                                           parent=leftColStyle,
-                                           leftIndent=0,
-                                           alignment=TA_RIGHT)
-            leftPara = Paragraph(text, leftColStyle)
-            rightPara = Paragraph(str(pageNum), rightColStyle)
-            tableData.append([leftPara, rightPara])
-
-        self._table = Table(
-            tableData,
-            colWidths=widths,
-            style=TableStyle(tableStyle))
-
-        self.width, self.height = self._table.wrapOn(self.canv, availWidth, availHeight)
-        return self.width, self.height
+    pass
 
 
 class PmlRightPageBreak(CondPageBreak):
