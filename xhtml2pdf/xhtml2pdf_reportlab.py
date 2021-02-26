@@ -24,14 +24,17 @@ import six
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import LazyImageReader, flatten, getStringIO, haveImages, open_for_read
+from reportlab.platypus.paragraph import Paragraph as ReportlabParagraph, textTransformFrags
+from reportlab.platypus.paraparser import ParaParser
 from reportlab.platypus.doctemplate import BaseDocTemplate, IndexingFlowable, PageTemplate
-from reportlab.platypus.flowables import CondPageBreak, Flowable, KeepInFrame, ParagraphAndImage
-from reportlab.platypus.tableofcontents import TableOfContents
+from reportlab.platypus.flowables import CondPageBreak, Flowable, KeepInFrame, ParagraphAndImage, Spacer
+from reportlab.platypus.tableofcontents import TableOfContents, drawPageNumbers
 from reportlab.platypus.tables import Table, TableStyle
 from reportlab.rl_config import register_reset
 
 from xhtml2pdf.reportlab_paragraph import Paragraph
 from xhtml2pdf.util import getBorderStyle, getUID
+from ast import literal_eval
 
 try:
     import PIL.Image as PILImage
@@ -133,7 +136,7 @@ class PmlBaseDoc(BaseDocTemplate):
             toc_subtitle = flowable.mntr_extra and flowable.mntr_extra.get('toc_subtitle')
             if toc_subtitle:
                 self.notify('TOCEntry', (
-                    flowable.outlineLevel + 1,
+                    2,
                     html_escape(toc_subtitle, 1),
                     self.page,
                     key))
@@ -796,8 +799,84 @@ class PmlPageCount(IndexingFlowable):
         pass
 
 
+class MntrParaParser(ParaParser):
+    def _initial_frag(self,attr,attrMap,bullet=0):
+        frag = super()._initial_frag(attr,attrMap,bullet)
+        frag.italic = 0
+        return frag
+
+
+class TocParagraph(ReportlabParagraph):
+    def _setup(self, text, style, bulletText, frags, cleaner):
+        #This used to be a global parser to save overhead.
+        #In the interests of thread safety it is being instantiated per paragraph.
+        #On the next release, we'll replace with a cElementTree parser
+        if frags is None:
+            text = cleaner(text)
+            _parser = MntrParaParser()
+            _parser.caseSensitive = self.caseSensitive
+            style, frags, bulletTextFrags = _parser.parse(text,style)
+            if frags is None:
+                raise ValueError("xml parser error (%s) in paragraph beginning\n'%s'"\
+                    % (_parser.errors[0],text[:min(30,len(text))]))
+            textTransformFrags(frags,style)
+            if bulletTextFrags: bulletText = bulletTextFrags
+
+        #AR hack
+        self.text = text
+        self.frags = frags  #either the parse fragments or frag word list
+        self.style = style
+        self.bulletText = bulletText
+        self.debug = 0  #turn this on to see a pretty one with all the margins etc.
+
+
+
 class PmlTableOfContents(TableOfContents):
-    pass
+    def wrap(self, availWidth, availHeight):
+        "All table properties should be known by now."
+
+        # makes an internal table which does all the work.
+        # we draw the LAST RUN's entries!  If there are
+        # none, we make some dummy data to keep the table
+        # from complaining
+        if len(self._lastEntries) == 0:
+            _tempEntries = [(0,'Placeholder for table of contents',0,None)]
+        else:
+            _tempEntries = self._lastEntries
+
+        def drawTOCEntryEnd(canvas, kind, label):
+            '''Callback to draw dots and page numbers after each entry.'''
+            label = label.split(',')
+            page, level, key = int(label[0]), int(label[1]), literal_eval(label[2])
+            if level == 2:
+                return
+            style = self.getLevelStyle(level)
+            if level <= 1:
+                dot = ' . '
+            else:
+                dot = ''
+            if self.formatter: page = self.formatter(page)
+            drawPageNumbers(canvas, style, [(page, key)], availWidth, availHeight, dot)
+        self.canv.drawTOCEntryEnd = drawTOCEntryEnd
+
+        tableData = []
+        for (level, text, pageNum, key) in _tempEntries:
+            style = self.getLevelStyle(level)
+            if key:
+                text = '<a href="#%s">%s</a>' % (key, text)
+                keyVal = repr(key).replace(',','\\x2c').replace('"','\\x2c')
+            else:
+                keyVal = None
+            para = TocParagraph('%s<onDraw name="drawTOCEntryEnd" label="%d,%d,%s"/>' % (text, pageNum, level, keyVal), style)
+            # import ipdb; ipdb.set_trace()
+            if style.spaceBefore:
+                tableData.append([Spacer(1, style.spaceBefore),])
+            tableData.append([para,])
+
+        self._table = Table(tableData, colWidths=(availWidth,), style=self.tableStyle)
+
+        self.width, self.height = self._table.wrapOn(self.canv,availWidth, availHeight)
+        return (self.width, self.height)
 
 
 class PmlRightPageBreak(CondPageBreak):
