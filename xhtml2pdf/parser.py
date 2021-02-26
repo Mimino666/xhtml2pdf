@@ -114,6 +114,7 @@ def pisaGetAttributes(c, tag, attributes):
     if tag in TAGS:
         block, adef = TAGS[tag]
         adef["id"] = STRING
+        adef["toc-subtitle"] = STRING
 
         for k, v in six.iteritems(adef):
             nattrs[k] = None
@@ -693,7 +694,7 @@ def pisaLoop(node, context, path=None, **kw):
 
         # Block?
         if isBlock:
-            context.addPara()
+            context.addPara(mntr_extra={'toc_subtitle': attr.get('toc-subtitle', None)})
 
             # XXX Buggy!
 

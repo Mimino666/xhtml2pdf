@@ -255,7 +255,7 @@ class pisaCSSBuilder(css.CSSBuilder):
             if border or pageBorder:
 
                 frame_border = ShowBoundaryValue(width=int(border))   #frame_border = ShowBoundaryValue() to
-                                                                      #frame_border = ShowBoundaryValue(width=int(border))
+                #frame_border = ShowBoundaryValue(width=int(border))
             else:
                 frame_border = ShowBoundaryValue(
                     color=fborder_color, width=fborder_width)
@@ -548,7 +548,7 @@ class pisaContext(object):
     def dumpPara(self, frags, style):
         return
 
-    def addPara(self, force=False):
+    def addPara(self, force=False, mntr_extra=None):
 
         force = (force or self.force)
         self.force = False
@@ -604,7 +604,8 @@ class pisaContext(object):
                     self.text,
                     style,
                     frags=self.fragAnchor + self.fragList,
-                    bulletText=bulletText)
+                    bulletText=bulletText,
+                    mntr_extra=mntr_extra)
 
                 para.outline = first.outline
                 para.outlineLevel = first.outlineLevel
@@ -808,7 +809,7 @@ class pisaContext(object):
                 font = self.asianFontList.get(font, None)
                 set_asian_fonts(font)
             else:
-                font = self.fontList.get(font,None)
+                font = self.fontList.get(font, None)
             if font is not None:
                 return font
         return self.fontList.get(default, None)

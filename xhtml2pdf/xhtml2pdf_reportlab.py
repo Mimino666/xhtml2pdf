@@ -130,6 +130,14 @@ class PmlBaseDoc(BaseDocTemplate):
                 self.page,
                 key))
 
+            toc_subtitle = flowable.mntr_extra and flowable.mntr_extra.get('toc_subtitle')
+            if toc_subtitle:
+                self.notify('TOCEntry', (
+                    flowable.outlineLevel + 1,
+                    html_escape(toc_subtitle, 1),
+                    self.page,
+                    key))
+
     def handle_nextPageTemplate(self, pt):
         '''
         if pt has also templates for even and odd page convert it to list

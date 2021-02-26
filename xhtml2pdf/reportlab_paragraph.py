@@ -954,9 +954,10 @@ class Paragraph(Flowable):
 
         It will also be able to handle any MathML specified Greek characters.
     """
-    def __init__(self, text, style, bulletText=None, frags=None, caseSensitive=1, encoding='utf8'):
+    def __init__(self, text, style, bulletText=None, frags=None, caseSensitive=1, encoding='utf8', mntr_extra=None):
         self.caseSensitive = caseSensitive
         self.encoding = encoding
+        self.mntr_extra = mntr_extra
         self._setup(text, style, bulletText, frags, cleanBlockQuotedText)
 
     def __repr__(self):
