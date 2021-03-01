@@ -800,27 +800,37 @@ class PmlPageCount(IndexingFlowable):
 
 
 class MntrParaParser(ParaParser):
-    def _initial_frag(self,attr,attrMap,bullet=0):
-        frag = super()._initial_frag(attr,attrMap,bullet)
+    def __init__(self, *args, **kwargs):
+        self.level = kwargs.pop('level')
+        super().__init__(*args, **kwargs)
+
+    def _initial_frag(self, attr, attrMap, bullet=0):
+        frag = super()._initial_frag(attr, attrMap, bullet)
         frag.italic = 0
+        frag.bold = (self.level != 2)
         return frag
 
 
 class TocParagraph(ReportlabParagraph):
+    def __init__(self, *args, **kwargs):
+        self.level = kwargs.pop('level')
+        super().__init__(*args, **kwargs)
+
     def _setup(self, text, style, bulletText, frags, cleaner):
         #This used to be a global parser to save overhead.
         #In the interests of thread safety it is being instantiated per paragraph.
         #On the next release, we'll replace with a cElementTree parser
         if frags is None:
             text = cleaner(text)
-            _parser = MntrParaParser()
+            _parser = MntrParaParser(level=self.level)
             _parser.caseSensitive = self.caseSensitive
-            style, frags, bulletTextFrags = _parser.parse(text,style)
+            style, frags, bulletTextFrags = _parser.parse(text, style)
             if frags is None:
-                raise ValueError("xml parser error (%s) in paragraph beginning\n'%s'"\
-                    % (_parser.errors[0],text[:min(30,len(text))]))
-            textTransformFrags(frags,style)
-            if bulletTextFrags: bulletText = bulletTextFrags
+                raise ValueError("xml parser error (%s) in paragraph beginning\n'%s'"
+                    % (_parser.errors[0], text[:min(30, len(text))]))
+            textTransformFrags(frags, style)
+            if bulletTextFrags:
+                bulletText = bulletTextFrags
 
         #AR hack
         self.text = text
@@ -828,7 +838,6 @@ class TocParagraph(ReportlabParagraph):
         self.style = style
         self.bulletText = bulletText
         self.debug = 0  #turn this on to see a pretty one with all the margins etc.
-
 
 
 class PmlTableOfContents(TableOfContents):
@@ -840,7 +849,7 @@ class PmlTableOfContents(TableOfContents):
         # none, we make some dummy data to keep the table
         # from complaining
         if len(self._lastEntries) == 0:
-            _tempEntries = [(0,'Placeholder for table of contents',0,None)]
+            _tempEntries = [(0, 'Placeholder for table of contents', 0, None)]
         else:
             _tempEntries = self._lastEntries
 
@@ -855,7 +864,8 @@ class PmlTableOfContents(TableOfContents):
                 dot = ' . '
             else:
                 dot = ''
-            if self.formatter: page = self.formatter(page)
+            if self.formatter:
+                page = self.formatter(page)
             drawPageNumbers(canvas, style, [(page, key)], availWidth, availHeight, dot)
         self.canv.drawTOCEntryEnd = drawTOCEntryEnd
 
@@ -864,18 +874,18 @@ class PmlTableOfContents(TableOfContents):
             style = self.getLevelStyle(level)
             if key:
                 text = '<a href="#%s">%s</a>' % (key, text)
-                keyVal = repr(key).replace(',','\\x2c').replace('"','\\x2c')
+                keyVal = repr(key).replace(',', '\\x2c').replace('"', '\\x2c')
             else:
                 keyVal = None
-            para = TocParagraph('%s<onDraw name="drawTOCEntryEnd" label="%d,%d,%s"/>' % (text, pageNum, level, keyVal), style)
+            para = TocParagraph('%s<onDraw name="drawTOCEntryEnd" label="%d,%d,%s"/>' % (text, pageNum, level, keyVal), style, level=level)
             # import ipdb; ipdb.set_trace()
             if style.spaceBefore:
-                tableData.append([Spacer(1, style.spaceBefore),])
-            tableData.append([para,])
+                tableData.append([Spacer(1, style.spaceBefore), ])
+            tableData.append([para, ])
 
         self._table = Table(tableData, colWidths=(availWidth,), style=self.tableStyle)
 
-        self.width, self.height = self._table.wrapOn(self.canv,availWidth, availHeight)
+        self.width, self.height = self._table.wrapOn(self.canv, availWidth, availHeight)
         return (self.width, self.height)
 
 
