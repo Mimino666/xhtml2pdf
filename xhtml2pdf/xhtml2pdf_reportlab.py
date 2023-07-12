@@ -23,7 +23,7 @@ import reportlab.pdfbase.pdfform as pdfform
 import six
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.utils import LazyImageReader, flatten, getStringIO, haveImages, open_for_read
+from reportlab.lib.utils import LazyImageReader, flatten, haveImages, open_for_read
 from reportlab.platypus.paragraph import Paragraph as ReportlabParagraph, textTransformFrags
 from reportlab.platypus.paraparser import ParaParser
 from reportlab.platypus.doctemplate import BaseDocTemplate, IndexingFlowable, PageTemplate
@@ -350,7 +350,7 @@ class PmlImageReader(object):  # TODO We need a factory here, returning either a
                             register_reset(self._cache.clear)
 
                         data = self._cache.setdefault(md5(data).digest(), data)
-                    self.fp = getStringIO(data)
+                    self.fp = six.StringIO(data)
                 elif imageReaderFlags == - 1 and isinstance(fileName, six.text_type):
                     #try Ralf Schmitt's re-opening technique of avoiding too many open files
                     self.fp.close()
