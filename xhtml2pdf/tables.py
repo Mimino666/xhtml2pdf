@@ -167,6 +167,7 @@ class pisaTagTABLE(pisaTag):
         tdata.rowh = []
         tdata.repeat = attrs.repeat
         tdata.width = _width(attrs.width)
+        tdata.radius = attrs.radius
 
     def end(self, c):
         tdata = c.tableData
@@ -186,6 +187,8 @@ class pisaTagTABLE(pisaTag):
 
         log.debug("Col widths: {}".format(list(tdata.colw)))
         if tdata.data:
+            if tdata.radius:
+                tdata.add_style(('ROUNDEDCORNERS', [tdata.radius] * 4))
             # log.debug("Table styles %r", tdata.styles)
             t = PmlTable(
                 data,

@@ -252,6 +252,7 @@ TAGS = {
         "cellspacing": (SIZE, "0"),
         "repeat": (INT, "0"), # XXX Remove this! Set to 0
         "width": STRING,
+        "radius": (SIZE, "0"),  # the corners' radius: the table's background and border rounded
         #"keepmaxwidth":         SIZE,
         #"keepmaxheight":        SIZE,
         #"keepmergespace":       (INT, 1),

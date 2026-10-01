@@ -355,17 +355,18 @@ class pisaTagIMG(pisaTag):
                 img.drawHeight *= dpi96
                 img.drawWidth *= dpi96
 
+                # an `em` is the text's font size, as for any other length
                 if (width is None) and (height is not None):
-                    factor = getSize(height, default=img.drawHeight) / img.drawHeight
+                    factor = getSize(height, c.frag.fontSize, default=img.drawHeight) / img.drawHeight
                     img.drawWidth *= factor
-                    img.drawHeight = getSize(height, default=img.drawHeight)
+                    img.drawHeight = getSize(height, c.frag.fontSize, default=img.drawHeight)
                 elif (height is None) and (width is not None):
-                    factor = getSize(width, default=img.drawWidth) / img.drawWidth
+                    factor = getSize(width, c.frag.fontSize, default=img.drawWidth) / img.drawWidth
                     img.drawHeight *= factor
-                    img.drawWidth = getSize(width, default=img.drawWidth)
+                    img.drawWidth = getSize(width, c.frag.fontSize, default=img.drawWidth)
                 elif (width is not None) and (height is not None):
-                    img.drawWidth = getSize(width, default=img.drawWidth)
-                    img.drawHeight = getSize(height, default=img.drawHeight)
+                    img.drawWidth = getSize(width, c.frag.fontSize, default=img.drawWidth)
+                    img.drawHeight = getSize(height, c.frag.fontSize, default=img.drawHeight)
 
                 img.drawWidth *= img.pisaZoom
                 img.drawHeight *= img.pisaZoom
