@@ -328,6 +328,15 @@ class pisaTagBR(pisaTag):
         c.force = True
 
 
+def _getImageSize(value, fontSize, default):
+    """
+    An image's width or height: an `em`, a `rem` or an `ex` of the text's font size, as for any other length; any
+    other size as `getSize` takes it.
+    """
+    relative = fontSize if str(value).strip().lower().endswith(("em", "ex")) else 0
+    return getSize(value, relative, default=default)
+
+
 class pisaTagIMG(pisaTag):
     def start(self, c):
         attr = self.attr
@@ -355,18 +364,17 @@ class pisaTagIMG(pisaTag):
                 img.drawHeight *= dpi96
                 img.drawWidth *= dpi96
 
-                # an `em` is the text's font size, as for any other length
                 if (width is None) and (height is not None):
-                    factor = getSize(height, c.frag.fontSize, default=img.drawHeight) / img.drawHeight
+                    factor = _getImageSize(height, c.frag.fontSize, img.drawHeight) / img.drawHeight
                     img.drawWidth *= factor
-                    img.drawHeight = getSize(height, c.frag.fontSize, default=img.drawHeight)
+                    img.drawHeight = _getImageSize(height, c.frag.fontSize, img.drawHeight)
                 elif (height is None) and (width is not None):
-                    factor = getSize(width, c.frag.fontSize, default=img.drawWidth) / img.drawWidth
+                    factor = _getImageSize(width, c.frag.fontSize, img.drawWidth) / img.drawWidth
                     img.drawHeight *= factor
-                    img.drawWidth = getSize(width, c.frag.fontSize, default=img.drawWidth)
+                    img.drawWidth = _getImageSize(width, c.frag.fontSize, img.drawWidth)
                 elif (width is not None) and (height is not None):
-                    img.drawWidth = getSize(width, c.frag.fontSize, default=img.drawWidth)
-                    img.drawHeight = getSize(height, c.frag.fontSize, default=img.drawHeight)
+                    img.drawWidth = _getImageSize(width, c.frag.fontSize, img.drawWidth)
+                    img.drawHeight = _getImageSize(height, c.frag.fontSize, img.drawHeight)
 
                 img.drawWidth *= img.pisaZoom
                 img.drawHeight *= img.pisaZoom
