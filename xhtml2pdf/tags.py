@@ -429,6 +429,8 @@ class pisaTagIMG(pisaTag):
 
                     c.fragList.append(afrag)
                     c.fontSize = img.drawHeight
+                    # the image is the line's content: a space after it is kept, as after a word
+                    c.fragStrip = False
 
             except Exception:  # TODO: Kill catch-all
                 log.warning(c.warning("Error in handling image"), exc_info=1)
